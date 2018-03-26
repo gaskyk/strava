@@ -49,7 +49,7 @@ ggplot(data=track_summary, aes(x=date, y=speed_km, group = type)) + geom_line() 
 ## Plot length of ride / run by speed
 ggplot(data=track_summary, aes(x=cum_distance, y=speed_km, group = type)) + geom_point() +
   labs(x="Length of activity (km)", y="Average speed (km/h)", title="Average speed by distance") +
-  ylim(0,25) + facet_grid(. ~ type) + theme(plot.title = element_text(hjust = 0.5))
+  ylim(0,25) + facet_grid(. ~ type, scales="free") + theme(plot.title = element_text(hjust = 0.5))
 
 ## Produce a facet plot map of all rides / runs
 ggplot() + geom_path(ggplot2::aes(Longitude, Latitude, group = Track_number, colour=Type), tracks, size = 0.35, lineend = "round") +
