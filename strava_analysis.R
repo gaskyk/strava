@@ -14,7 +14,7 @@ library(chron)
 library(tidyverse)
 
 ## Import csv data from Python
-tracks <- read.csv('/my/file/location/rides.csv')
+tracks <- read.csv('C:/Users/ONS-BIG-DATA/Documents/Strava/activities_csv/activities.csv')
 
 ## Convert segment_time and cum_time to time format
 format_time <- function(x) {
@@ -37,7 +37,7 @@ track_summary <- tracks %>%
   dplyr::group_by(Track_number) %>%
   dplyr::summarise(cum_distance = max(cum_dist),
                    cum_time = max(cum_time),
-                   type = first(Type),
+                   type = first(Activity),
                    date = first(Date))
 track_summary$speed_km <- as.numeric(track_summary$cum_distance/track_summary$cum_time/24)
 
@@ -52,7 +52,7 @@ ggplot(data=track_summary, aes(x=cum_distance, y=speed_km, group = type)) + geom
   ylim(0,25) + facet_grid(. ~ type, scales="free") + theme(plot.title = element_text(hjust = 0.5))
 
 ## Produce a facet plot map of all rides / runs
-ggplot() + geom_path(ggplot2::aes(Longitude, Latitude, group = Track_number, colour=Type), tracks, size = 0.35, lineend = "round") +
+ggplot() + geom_path(ggplot2::aes(Longitude, Latitude, group = Track_number, colour=Activity), tracks, size = 0.35, lineend = "round") +
   facet_wrap(~Track_number, scales = "free") +
   theme(panel.spacing = ggplot2::unit(0, "lines"),
         strip.background = ggplot2::element_blank(),
@@ -63,7 +63,7 @@ ggplot() + geom_path(ggplot2::aes(Longitude, Latitude, group = Track_number, col
         axis.title.y=element_blank(), panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
         panel.grid.minor=element_blank(),plot.background=element_blank(),
         axis.ticks = element_blank()) +
-  scale_color_manual(values=c("blue", "green"))
+  scale_color_manual(values=c("blue", "green", "red"))
 
 ## Plot elevations
 plot_elevations <- function(tracks) {
