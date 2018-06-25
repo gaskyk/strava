@@ -27,6 +27,7 @@ Take care to edit the file paths in each file
 
 Data wrangling is done first using Python 3.6 in the file *Parse_GPX_to_CSV_add_attributes.py*. Packages required:
 - gpxpy
+- re
 - os
 - pandas
 - numpy
