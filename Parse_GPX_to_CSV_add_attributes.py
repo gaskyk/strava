@@ -5,30 +5,32 @@ Convert a directory of GPX files to CSV
 
 Convert a directory of GPX files to CSV of timestamp, lat, long, elevation
 Add cumulative time and distance per ride or run
-Add type of activity ie. ride or run
+Add type of activity ie. ride, hike or run
 
 Requirements
 ------------
 
 :requires: gpxpy
+:requires: re
 :requires: os
 :requires: pandas
 :requires: numpy
 
 Version
 -------
-:date: 04-Jan-18
+:date: 25-Jun-18
 """
 
 ## Import libraries
 import gpxpy
+import re
 import os
 import pandas as pd
 import numpy as np
 
 ## Change these global variables to match your input and output data directories
-INDIR = r'\my\input\folder'
-OUTDIR = r'\my\output\folder'
+INDIR = r'C:\Users\ONS-BIG-DATA\Documents\Strava\activities'
+OUTDIR = r'C:\Users\ONS-BIG-DATA\Documents\Strava\activities_csv'
 
 def parsegpx(f):
     """
@@ -47,13 +49,19 @@ def parsegpx(f):
     points2 = []
     with open(f, 'r') as gpxfile:
         gpx = gpxpy.parse(gpxfile)
+        # Gets activity number from GPX file
+        activity_type = re.findall("<type>[0-9]</type>", gpx.to_xml())
+        activity_type = activity_type[0]
+        activity_number = activity_type[6]
+        # Get each point within the GPX file
         for track in gpx.tracks:
             for segment in track.segments:
                 for point in segment.points:
                     dict = {'Timestamp' : point.time,
                             'Latitude' : point.latitude,
                             'Longitude' : point.longitude,
-                            'Elevation' : point.elevation
+                            'Elevation' : point.elevation,
+                            'Activity': activity_number
                             }
                     points2.append(dict)
     return points2
@@ -102,7 +110,7 @@ my_data['dist_between_points'] = np.where(my_data['ID']==0, 0, my_data['dist_bet
 def add_attributes(df):
     """
     Add the following attributes to the data frame:
-    - Type of activity (ride or run)
+    - Activity type (ride, hike or run)
     - Track number (numbering of each activity sequentially)
     - Cumulative distance (distance cycled or run for each activity)
     - Time taken to ride / run between each point (setting time to zero if it has taken >3 minutes
@@ -112,14 +120,16 @@ def add_attributes(df):
     :param df: An input data frame with column names 'dist_between_points', 'Timestamp' and 'Name' at least
     :type: df: Pandas data frame
 
-    :return df: Data frame containing additional columns 'Type', 'Track_number', 'cum_dist',
+    :return df: Data frame containing additional columns 'Activity', 'Track_number', 'cum_dist',
     'segment_time' and 'cum_time'
     :type df: Pandas data frame
 
     """
 
-    ## Add the type of activity ie. Ride or Run. I only ride or run
-    df['Type'] = np.where(df['Name'].str.contains("Ride"), "Ride", "Run")
+    ## Add the type of activity in text ie. 1=Ride, 4=Hike or 9=Run. I do these
+    df['Activity'] = np.where(df['Activity'].str.contains("1"), "Ride", df["Activity"])
+    df['Activity'] = np.where(df['Activity'].str.contains("4"), "Hike", df["Activity"])
+    df['Activity'] = np.where(df['Activity'].str.contains("9"), "Run", df["Activity"])
     
     ## Create a track number for each activity
     df['Track_number'] = pd.factorize(df.Name)[0]+1
@@ -144,4 +154,4 @@ def add_attributes(df):
 my_data = add_attributes(my_data)
 
 ## Write the data out to a CSV file
-my_data.to_csv(OUTDIR + '\\rides.csv')
+my_data.to_csv(OUTDIR + '\\activities.csv')
