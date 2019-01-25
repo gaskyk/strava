@@ -1,9 +1,9 @@
 """
 
-Convert a directory of GPX files to CSV
-=======================================
+Convert a directory of GPX and/or TCX files to CSV
+==================================================
 
-Convert a directory of GPX files to CSV of timestamp, lat, long, elevation
+Convert a directory of GPX and/or TCX files to CSV of timestamp, lat, long, elevation
 Add cumulative time and distance per ride or run
 Add type of activity ie. ride, hike or run
 
@@ -18,7 +18,7 @@ Requirements
 
 Version
 -------
-:date: 25-Jun-18
+:date: 25-Jan-19
 """
 
 ## Import libraries
