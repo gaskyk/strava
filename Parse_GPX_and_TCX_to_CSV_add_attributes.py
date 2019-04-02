@@ -18,19 +18,20 @@ Requirements
 
 Version
 -------
-:date: 25-Jan-19
+:date: 02-Apr-19
 """
 
-## Import libraries
+# Import libraries
 import gpxpy
 import re
 import os
 import pandas as pd
 import numpy as np
 
-## Change these global variables to match your input and output data directories
+# Change these global variables to match your input and output data directories
 INDIR = r'C:\Users\ONS-BIG-DATA\Documents\Strava\activities'
 OUTDIR = r'C:\Users\ONS-BIG-DATA\Documents\Strava\activities_csv'
+
 
 def parsegpx(f):
     """
@@ -97,34 +98,33 @@ def parsetcx(f):
 
 files = os.listdir(INDIR)
 
-## Parse files differently if they are gpx or tcx
+# Parse files differently if they are gpx or tcx
 gpx_files = []
 tcx_files = []
 for fname in files:
     if fname.endswith('.gpx'):
         gpx_files.append(fname)
-        ## Parse the gpx files into a pandas dataframe
+        # Parse the gpx files into a pandas dataframe
         gpx_data = pd.concat([pd.DataFrame(parsegpx(INDIR + '\\' + f)) for f in gpx_files], keys=gpx_files)
-        ## Ensure index is part of data frame
+        # Ensure index is part of data frame
         gpx_data = gpx_data.reset_index()
         gpx_data = gpx_data.rename(columns={gpx_data.columns[0]: "Name", gpx_data.columns[1]: "ID"})
-        break
-    if fname.endswith('.tcx'):
+    elif fname.endswith('.tcx'):
         tcx_files.append(fname)
-        ## Parse the tcx files into a pandas dataframe
+        # Parse the tcx files into a pandas dataframe
         tcx_data = pd.DataFrame()
         for f in tcx_files:
             temp_df = parsetcx(INDIR + '\\' + f)
             tcx_data = pd.concat([tcx_data, temp_df])
-        ## Ensure index is part of data frame
+        # Ensure index is part of data frame
         tcx_data = tcx_data.reset_index()
         tcx_data = tcx_data.rename(columns={tcx_data.columns[0]: "ID"})
-        break
+print("GPX and TCX files successfully parsed")
 
-## Concatenate GPX and TCX files
+# Concatenate GPX and TCX files
 my_data = pd.concat([gpx_data, tcx_data], sort=False)
 
-## Now calculate distance between points using Haversine distance
+# Now calculate distance between points using Haversine distance
 def haversine_np(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
@@ -153,8 +153,14 @@ def haversine_np(lon1, lat1, lon2, lat2):
     km = 6367 * c
     return km
 
+# First reset the index - otherwise index 1 will appear twice
+my_data = my_data.reset_index(drop=True)
+# Coerce object format to float format
+my_data['Longitude'] = my_data['Longitude'].astype(float)
+my_data['Latitude'] = my_data['Latitude'].astype(float)
+
 my_data['dist_between_points'] = haversine_np(my_data.Longitude.shift(), my_data.Latitude.shift(), my_data.ix[1:, 'Longitude'], my_data.ix[1:, 'Latitude'])
-## Ensure distance between points is reset at the start of each activity
+# Ensure distance between points is reset at the start of each activity
 my_data['dist_between_points'] = np.where(my_data['ID']==0, 0, my_data['dist_between_points'])
 
 def add_attributes(df):
@@ -175,22 +181,22 @@ def add_attributes(df):
 
     """
     
-    ## Create a track number for each activity
+    # Create a track number for each activity
     df['Track_number'] = pd.factorize(df.Name)[0]+1
     
-    ## Calculate cumulative distance
+    # Calculate cumulative distance
     df['cum_dist']=df.groupby('Track_number')['dist_between_points'].transform(pd.Series.cumsum)
     
-    ## Calculate time between points
+    # Calculate time between points
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
     df['segment_time'] = df['Timestamp'] - df['Timestamp'].shift(1)
     
-    ## Set segment_time to zero at the start of the ride / run or
-    ## where segment_time > 3 minutes (where I am likely to have stopped Strava or stopped at a cafe)
+    # Set segment_time to zero at the start of the ride / run or
+    # where segment_time > 3 minutes (where I am likely to have stopped Strava or stopped at a cafe)
     df['segment_time'] = np.where(df['ID']==0, 0, df['segment_time'])
     df['segment_time'] = np.where(df['segment_time'] / np.timedelta64(1, 's') > 60*3, 0, df['segment_time'])
     
-    ## Calculate cumulative time over tracks
+    # Calculate cumulative time over tracks
     df['cum_time']=df.groupby('Track_number')['segment_time'].transform(pd.Series.cumsum)
     
     return df
@@ -215,9 +221,17 @@ def add_activity_type(df):
 
     # Import activity data, drop then rename columns
     activity_type = pd.read_csv(INDIR + '\\' + 'activities.csv')
-    activity_type = activity_type[['id','type']]
-    activity_type = activity_type.rename(columns={'id': 'Name', 'type': 'Activity_type'})
+    activity_type = activity_type[['type', 'filename']]
+    activity_type = activity_type.rename(columns={'type': 'Activity_type', 'filename': 'Name'})
 
+    # Remove erroneous information from file names and convert to integer
+    activity_type['Name'] = activity_type['Name'].astype(str)
+    activity_type['Name'] = activity_type['Name'].map(lambda x: x.replace('.gpx', ''))
+    activity_type['Name'] = activity_type['Name'].map(lambda x: x.replace('.tcx', ''))
+    activity_type['Name'] = activity_type['Name'].map(lambda x: x.replace('.gz', ''))
+    activity_type['Name'] = activity_type['Name'].map(lambda x: x.replace('activities/', ''))
+    activity_type = activity_type[activity_type['Name'] != 'nan']
+    activity_type['Name'] = activity_type['Name'].astype(np.int64)
     # Merge datasets
     df_merged = pd.merge(df, activity_type, how='inner', on=['Name'])
 
@@ -225,6 +239,6 @@ def add_activity_type(df):
 
 my_data = add_activity_type(my_data)
 
-## Write the data out to a CSV file
+# Write the data out to a CSV file
 my_data.to_csv(OUTDIR + '\\my_activities.csv')
 
