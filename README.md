@@ -19,7 +19,7 @@ The inspiration for this project and some R code comes from [Marcus Volz](https:
 3. Under point 2 click button `Request Your Archive`
 4. Wait for an email to be sent (usually within a few hours)
 5. Click the link in email to download zipped folder containing activities
-6. You may see in the folder miscellaneous file extensions `.tcx`, `.tcx.gz` or `.gpx.gz` files. Unzip the .gz files so that only `.tcx` or `.gpx` files remain
+6. You may see in the folder miscellaneous file extensions `.tcx`, `.tcx.gz` or `.gpx.gz` files. Unzip the `.gz` files so that only `.tcx` or `.gpx` files remain
 
 ### Run Python then R files
 
